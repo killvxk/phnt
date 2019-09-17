@@ -244,18 +244,22 @@ typedef enum _FILE_INFORMATION_CLASS
     FileLinkInformationBypassAccessCheck, // (kernel-mode only); FILE_LINK_INFORMATION
     FileVolumeNameInformation, // FILE_VOLUME_NAME_INFORMATION
     FileIdInformation, // FILE_ID_INFORMATION
-    FileIdExtdDirectoryInformation, // FILE_ID_EXTD_DIR_INFORMATION
+    FileIdExtdDirectoryInformation, // FILE_ID_EXTD_DIR_INFORMATION // 60
     FileReplaceCompletionInformation, // FILE_COMPLETION_INFORMATION // since WINBLUE
     FileHardLinkFullIdInformation, // FILE_LINK_ENTRY_FULL_ID_INFORMATION
     FileIdExtdBothDirectoryInformation, // FILE_ID_EXTD_BOTH_DIR_INFORMATION // since THRESHOLD
     FileDispositionInformationEx, // FILE_DISPOSITION_INFO_EX // since REDSTONE
-    FileRenameInformationEx,
-    FileRenameInformationExBypassAccessCheck,
+    FileRenameInformationEx, // FILE_RENAME_INFORMATION
+    FileRenameInformationExBypassAccessCheck, // FILE_RENAME_INFORMATION
     FileDesiredStorageClassInformation, // FILE_DESIRED_STORAGE_CLASS_INFORMATION // since REDSTONE2
     FileStatInformation, // FILE_STAT_INFORMATION
     FileMemoryPartitionInformation, // FILE_MEMORY_PARTITION_INFORMATION // since REDSTONE3
-    FileStatLxInformation, // FILE_STAT_LX_INFORMATION // since REDSTONE4
+    FileStatLxInformation, // FILE_STAT_LX_INFORMATION // since REDSTONE4 // 70
     FileCaseSensitiveInformation, // FILE_CASE_SENSITIVE_INFORMATION
+    FileLinkInformationEx, // FILE_LINK_INFORMATION // since REDSTONE5
+    FileLinkInformationExBypassAccessCheck, // FILE_LINK_INFORMATION
+    FileStorageReserveIdInformation, // FILE_SET_STORAGE_RESERVE_ID_INFORMATION
+    FileCaseSensitiveInformationForceAccessCheck, // FILE_CASE_SENSITIVE_INFORMATION
     FileMaximumInformation
 } FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
 
@@ -934,21 +938,17 @@ typedef enum _FSINFOCLASS
     FileFsFullSizeInformation, // FILE_FS_FULL_SIZE_INFORMATION
     FileFsObjectIdInformation, // FILE_FS_OBJECTID_INFORMATION
     FileFsDriverPathInformation, // FILE_FS_DRIVER_PATH_INFORMATION
-    FileFsVolumeFlagsInformation, // FILE_FS_VOLUME_FLAGS_INFORMATION
+    FileFsVolumeFlagsInformation, // FILE_FS_VOLUME_FLAGS_INFORMATION // 10
     FileFsSectorSizeInformation, // FILE_FS_SECTOR_SIZE_INFORMATION // since WIN8
     FileFsDataCopyInformation, // FILE_FS_DATA_COPY_INFORMATION
     FileFsMetadataSizeInformation, // FILE_FS_METADATA_SIZE_INFORMATION // since THRESHOLD
+    FileFsFullSizeInformationEx, // FILE_FS_FULL_SIZE_INFORMATION_EX // since REDSTONE5
     FileFsMaximumInformation
 } FSINFOCLASS, *PFSINFOCLASS;
 
 // NtQueryVolumeInformation/NtSetVolumeInformation types
 
-typedef struct _FILE_FS_LABEL_INFORMATION
-{
-    ULONG VolumeLabelLength;
-    WCHAR VolumeLabel[1];
-} FILE_FS_LABEL_INFORMATION, *PFILE_FS_LABEL_INFORMATION;
-
+// private
 typedef struct _FILE_FS_VOLUME_INFORMATION
 {
     LARGE_INTEGER VolumeCreationTime;
@@ -958,6 +958,14 @@ typedef struct _FILE_FS_VOLUME_INFORMATION
     WCHAR VolumeLabel[1];
 } FILE_FS_VOLUME_INFORMATION, *PFILE_FS_VOLUME_INFORMATION;
 
+// private
+typedef struct _FILE_FS_LABEL_INFORMATION
+{
+    ULONG VolumeLabelLength;
+    WCHAR VolumeLabel[1];
+} FILE_FS_LABEL_INFORMATION, * PFILE_FS_LABEL_INFORMATION;
+
+// private
 typedef struct _FILE_FS_SIZE_INFORMATION
 {
     LARGE_INTEGER TotalAllocationUnits;
@@ -977,6 +985,7 @@ typedef struct _FILE_FS_CONTROL_INFORMATION
     ULONG FileSystemControlFlags;
 } FILE_FS_CONTROL_INFORMATION, *PFILE_FS_CONTROL_INFORMATION;
 
+// private
 typedef struct _FILE_FS_FULL_SIZE_INFORMATION
 {
     LARGE_INTEGER TotalAllocationUnits;
@@ -986,18 +995,21 @@ typedef struct _FILE_FS_FULL_SIZE_INFORMATION
     ULONG BytesPerSector;
 } FILE_FS_FULL_SIZE_INFORMATION, *PFILE_FS_FULL_SIZE_INFORMATION;
 
+// private
 typedef struct _FILE_FS_OBJECTID_INFORMATION
 {
     UCHAR ObjectId[16];
     UCHAR ExtendedInfo[48];
 } FILE_FS_OBJECTID_INFORMATION, *PFILE_FS_OBJECTID_INFORMATION;
 
+// private
 typedef struct _FILE_FS_DEVICE_INFORMATION
 {
     DEVICE_TYPE DeviceType;
     ULONG Characteristics;
 } FILE_FS_DEVICE_INFORMATION, *PFILE_FS_DEVICE_INFORMATION;
 
+// private
 typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
 {
     ULONG FileSystemAttributes;
@@ -1006,6 +1018,7 @@ typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
     WCHAR FileSystemName[1];
 } FILE_FS_ATTRIBUTE_INFORMATION, *PFILE_FS_ATTRIBUTE_INFORMATION;
 
+// private
 typedef struct _FILE_FS_DRIVER_PATH_INFORMATION
 {
     BOOLEAN DriverInPath;
@@ -1013,6 +1026,7 @@ typedef struct _FILE_FS_DRIVER_PATH_INFORMATION
     WCHAR DriverName[1];
 } FILE_FS_DRIVER_PATH_INFORMATION, *PFILE_FS_DRIVER_PATH_INFORMATION;
 
+// private
 typedef struct _FILE_FS_VOLUME_FLAGS_INFORMATION
 {
     ULONG Flags;
@@ -1041,12 +1055,31 @@ typedef struct _FILE_FS_DATA_COPY_INFORMATION
     ULONG NumberOfCopies;
 } FILE_FS_DATA_COPY_INFORMATION, *PFILE_FS_DATA_COPY_INFORMATION;
 
+// private
 typedef struct _FILE_FS_METADATA_SIZE_INFORMATION
 {
     LARGE_INTEGER TotalMetadataAllocationUnits;
     ULONG SectorsPerAllocationUnit;
     ULONG BytesPerSector;
 } FILE_FS_METADATA_SIZE_INFORMATION, *PFILE_FS_METADATA_SIZE_INFORMATION;
+
+// private
+typedef struct _FILE_FS_FULL_SIZE_INFORMATION_EX
+{
+    ULONGLONG ActualTotalAllocationUnits;
+    ULONGLONG ActualAvailableAllocationUnits;
+    ULONGLONG ActualPoolUnavailableAllocationUnits;
+    ULONGLONG CallerTotalAllocationUnits;
+    ULONGLONG CallerAvailableAllocationUnits;
+    ULONGLONG CallerPoolUnavailableAllocationUnits;
+    ULONGLONG UsedAllocationUnits;
+    ULONGLONG TotalReservedAllocationUnits;
+    ULONGLONG VolumeStorageReserveAllocationUnits;
+    ULONGLONG AvailableCommittedAllocationUnits;
+    ULONGLONG PoolAvailableAllocationUnits;
+    ULONG SectorsPerAllocationUnit;
+    ULONG BytesPerSector;
+} FILE_FS_FULL_SIZE_INFORMATION_EX, *PFILE_FS_FULL_SIZE_INFORMATION_EX;
 
 // System calls
 
@@ -1130,6 +1163,7 @@ NtFlushBuffersFile(
 
 #define FLUSH_FLAGS_FILE_DATA_ONLY 0x00000001
 #define FLUSH_FLAGS_NO_SYNC 0x00000002
+#define FLUSH_FLAGS_FILE_DATA_SYNC_ONLY 0x00000004 // REDSTONE1
 
 #if (PHNT_VERSION >= PHNT_WIN8)
 NTSYSCALLAPI
@@ -1154,6 +1188,19 @@ NtQueryInformationFile(
     _In_ ULONG Length,
     _In_ FILE_INFORMATION_CLASS FileInformationClass
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE2)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtQueryInformationByName(
+    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+    _Out_writes_bytes_(Length) PVOID FileInformation,
+    _In_ ULONG Length,
+    _In_ FILE_INFORMATION_CLASS FileInformationClass
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -1435,6 +1482,31 @@ NtNotifyChangeDirectoryFile(
     _In_ BOOLEAN WatchTree
     );
 
+// private
+typedef enum _DIRECTORY_NOTIFY_INFORMATION_CLASS
+{
+    DirectoryNotifyInformation, // FILE_NOTIFY_INFORMATION
+    DirectoryNotifyExtendedInformation // FILE_NOTIFY_EXTENDED_INFORMATION
+} DIRECTORY_NOTIFY_INFORMATION_CLASS, *PDIRECTORY_NOTIFY_INFORMATION_CLASS;
+
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtNotifyChangeDirectoryFileEx(
+    _In_ HANDLE FileHandle,
+    _In_opt_ HANDLE Event,
+    _In_opt_ PIO_APC_ROUTINE ApcRoutine,
+    _In_opt_ PVOID ApcContext,
+    _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+    _Out_writes_bytes_(Length) PVOID Buffer,
+    _In_ ULONG Length,
+    _In_ ULONG CompletionFilter,
+    _In_ BOOLEAN WatchTree,
+    _In_opt_ DIRECTORY_NOTIFY_INFORMATION_CLASS DirectoryNotifyInformationClass
+    );
+#endif
+
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -1490,7 +1562,7 @@ NTAPI
 NtQueryIoCompletion(
     _In_ HANDLE IoCompletionHandle,
     _In_ IO_COMPLETION_INFORMATION_CLASS IoCompletionInformationClass,
-    _Out_writes_bytes_(IoCompletionInformation) PVOID IoCompletionInformation,
+    _Out_writes_bytes_(IoCompletionInformationLength) PVOID IoCompletionInformation,
     _In_ ULONG IoCompletionInformationLength,
     _Out_opt_ PULONG ReturnLength
     );
